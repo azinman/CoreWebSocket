@@ -1,6 +1,6 @@
 //
-//  WebSocketClient.h
-//  WebSocketCore
+//  CoreWebSocketClient.h
+//  CoreWebSocketCore
 //
 //  Created by Mirek Rusin on 07/03/2011.
 //  Copyright 2011 Inteliv Ltd. All rights reserved.
@@ -15,23 +15,23 @@
 
 #pragma mark Lifecycle
 
-WebSocketClientRef WebSocketClientCreate  (WebSocketRef webSocket, CFSocketNativeHandle handle);
-WebSocketClientRef WebSocketClientRetain  (WebSocketClientRef client);
-WebSocketClientRef WebSocketClientRelease (WebSocketClientRef client);
+CoreWebSocketClientRef CoreWebSocketClientCreate  (CoreWebSocketRef webSocket, CFSocketNativeHandle handle);
+CoreWebSocketClientRef CoreWebSocketClientRetain  (CoreWebSocketClientRef client);
+CoreWebSocketClientRef CoreWebSocketClientRelease (CoreWebSocketClientRef client);
 
 #pragma mark Write
 
-CFIndex WebSocketClientWriteWithData   (WebSocketClientRef client, CFDataRef value);
-CFIndex WebSocketClientWriteWithString (WebSocketClientRef client, CFStringRef value);
+CFIndex CoreWebSocketClientWriteWithData   (CoreWebSocketClientRef client, CFDataRef value);
+CFIndex CoreWebSocketClientWriteWithString (CoreWebSocketClientRef client, CFStringRef value);
 
 #pragma mark Handshake (internal)
 
-uint32_t  __WebSocketGetMagicNumberWithKeyValueString         (CFStringRef string);
-bool      __WebSocketDataAppendMagickNumberWithKeyValueString (CFMutableDataRef data, CFStringRef string);
-CFDataRef __WebSocketCreateMD5Data                            (CFAllocatorRef allocator, CFDataRef value) CF_RETURNS_RETAINED;
-CFDataRef __WebSocketCreateSHA1DataWithData                   (CFAllocatorRef allocator, CFDataRef value) CF_RETURNS_RETAINED;
-CFDataRef __WebSocketCreateSHA1DataWithString                 (CFAllocatorRef allocator, CFStringRef value, CFStringEncoding encoding) CF_RETURNS_RETAINED;
-bool      __WebSocketClientReadHandShake                      (WebSocketClientRef client);
-bool      __WebSocketClientWriteWithHTTPMessage               (WebSocketClientRef client, CFHTTPMessageRef message);
+uint32_t  __CoreWebSocketGetMagicNumberWithKeyValueString         (CFStringRef string);
+bool      __CoreWebSocketDataAppendMagickNumberWithKeyValueString (CFMutableDataRef data, CFStringRef string);
+CFDataRef __CoreWebSocketCreateMD5Data                            (CFAllocatorRef allocator, CFDataRef value) CF_RETURNS_RETAINED;
+CFDataRef __CoreWebSocketCreateSHA1DataWithData                   (CFAllocatorRef allocator, CFDataRef value) CF_RETURNS_RETAINED;
+CFDataRef __CoreWebSocketCreateSHA1DataWithString                 (CFAllocatorRef allocator, CFStringRef value, CFStringEncoding encoding) CF_RETURNS_RETAINED;
+bool      __CoreWebSocketClientReadHandShake                      (CoreWebSocketClientRef client);
+bool      __CoreWebSocketClientWriteWithHTTPMessage               (CoreWebSocketClientRef client, CFHTTPMessageRef message);
 
 #endif

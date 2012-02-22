@@ -1,6 +1,6 @@
 //
-//  WebSocketTypes.h
-//  WebSocketCore
+//  CoreWebSocketTypes.h
+//  CoreWebSocketCore
 //
 //  Created by Mirek Rusin on 07/03/2011.
 //  Copyright 2011 Inteliv Ltd. All rights reserved.
@@ -12,96 +12,96 @@
 #import "CoreWebSocketLib.h"
 #include <CoreFoundation/CoreFoundation.h>
 
-#define WebSocketLog(fmt, ...) printf(fmt, __VA_ARGS__)
+#define CoreWebSocketLog(fmt, ...) printf(fmt, __VA_ARGS__)
 
-#define kWebSocketHostAny      CFSTR("0.0.0.0")
-#define kWebSocketHostLoopBack CFSTR("127.0.0.1")
-#define kWebSocketPortAny      0
+#define kCoreWebSocketHostAny      CFSTR("0.0.0.0")
+#define kCoreWebSocketHostLoopBack CFSTR("127.0.0.1")
+#define kCoreWebSocketPortAny      0
 
-typedef struct WebSocket  WebSocket;
-typedef        WebSocket *WebSocketRef;
+typedef struct CoreWebSocket  CoreWebSocket;
+typedef        CoreWebSocket *CoreWebSocketRef;
 
-typedef struct WebSocketClient  WebSocketClient;
-typedef        WebSocketClient *WebSocketClientRef;
+typedef struct CoreWebSocketClient  CoreWebSocketClient;
+typedef        CoreWebSocketClient *CoreWebSocketClientRef;
 
-#pragma mark WebSocket Protocol
+#pragma mark CoreWebSocket Protocol
 
-typedef enum WebSocketProtocol WebSocketProtocol;
+typedef enum CoreWebSocketProtocol CoreWebSocketProtocol;
 
-enum WebSocketProtocol {
-  kWebSocketProtocolUnknown           = -1,
-  kWebSocketProtocolDraftIETF_HYBI_00 =  0,
-  kWebSocketProtocolDraftIETF_HYBI_06 =  6
+enum CoreWebSocketProtocol {
+  kCoreWebSocketProtocolUnknown           = -1,
+  kCoreWebSocketProtocolDraftIETF_HYBI_00 =  0,
+  kCoreWebSocketProtocolDraftIETF_HYBI_06 =  6
 };
 
-#pragma mark WebSocket Callbacks
+#pragma mark CoreWebSocket Callbacks
 
-typedef void (*WebSocketDidAddClientCallback)     (WebSocketRef webSocket, WebSocketClientRef client);
-typedef void (*WebSocketWillRemoveClientCallback) (WebSocketRef webSocket, WebSocketClientRef client);
-typedef void (*WebSocketDidClientReadCallback)    (WebSocketRef webSocket, WebSocketClientRef client, CFStringRef value);
+typedef void (*CoreWebSocketDidAddClientCallback)     (CoreWebSocketRef webSocket, CoreWebSocketClientRef client);
+typedef void (*CoreWebSocketWillRemoveClientCallback) (CoreWebSocketRef webSocket, CoreWebSocketClientRef client);
+typedef void (*CoreWebSocketDidClientReadCallback)    (CoreWebSocketRef webSocket, CoreWebSocketClientRef client, CFStringRef value);
 
-typedef struct WebSocketCallbacks WebSocketCallbacks;
+typedef struct CoreWebSocketCallbacks CoreWebSocketCallbacks;
 
-struct WebSocketCallbacks {
-  WebSocketDidAddClientCallback     didAddClientCallback;
-  WebSocketWillRemoveClientCallback willRemoveClientCallback;
-  WebSocketDidClientReadCallback    didClientReadCallback;
+struct CoreWebSocketCallbacks {
+  CoreWebSocketDidAddClientCallback     didAddClientCallback;
+  CoreWebSocketWillRemoveClientCallback willRemoveClientCallback;
+  CoreWebSocketDidClientReadCallback    didClientReadCallback;
 };
 
-#pragma mark WebSocket Client
+#pragma mark CoreWebSocket Client
 
-enum WebSocketClientState {
-  kWebSocketClientInitialized,
-  kWebSocketClientReadStreamOpened,
-  kWebSocketClientWriteStreamOpened,
-  kWebSocketClientHandShakeError,
-  kWebSocketClientHandShakeRead,
-  kWebSocketClientHandShakeSent,
-  kWebSocketClientReady
+enum CoreWebSocketClientState {
+  kCoreWebSocketClientInitialized,
+  kCoreWebSocketClientReadStreamOpened,
+  kCoreWebSocketClientWriteStreamOpened,
+  kCoreWebSocketClientHandShakeError,
+  kCoreWebSocketClientHandShakeRead,
+  kCoreWebSocketClientHandShakeSent,
+  kCoreWebSocketClientReady
 };
 
-struct WebSocketClient {
+struct CoreWebSocketClient {
   CFUUIDRef uuid;
   CFAllocatorRef allocator;
   CFIndex retainCount;
-  WebSocketRef webSocket;
+  CoreWebSocketRef webSocket;
   CFSocketNativeHandle handle;
   CFReadStreamRef read;
   CFWriteStreamRef write;
-  
+
   CFMutableArrayRef writeQueue;
-  
+
   CFHTTPMessageRef handShakeRequestHTTPMessage;
-  WebSocketProtocol protocol;
-  
+  CoreWebSocketProtocol protocol;
+
   // Linked list of clients
-  WebSocketClientRef previousClient;
-  WebSocketClientRef nextClient;
-  
+  CoreWebSocketClientRef previousClient;
+  CoreWebSocketClientRef nextClient;
+
   CFStreamClientContext context;
-  
+
   bool didReadHandShake;
   bool didWriteHandShake;
-  
+
 };
 
-struct WebSocket {
+struct CoreWebSocket {
   CFAllocatorRef allocator;
   CFIndex retainCount;
   void *userInfo;
-  
+
   struct sockaddr_in addr;
   CFSocketRef socket;
   CFReadStreamRef read;
   CFWriteStreamRef write;
-  
+
   CFIndex clientsUsedLength;
   CFIndex clientsLength;
-  WebSocketClientRef *clients;
-  
+  CoreWebSocketClientRef *clients;
+
   CFSocketContext context;
-  
-  WebSocketCallbacks callbacks;
+
+  CoreWebSocketCallbacks callbacks;
 };
 
 #endif

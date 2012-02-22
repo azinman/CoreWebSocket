@@ -1,6 +1,6 @@
 //
-//  WebSocket.c
-//  WebSocketCore
+//  CoreWebSocket.c
+//  CoreWebSocketCore
 //
 //  Created by Mirek Rusin on 07/03/2011.
 //  Copyright 2011 Inteliv Ltd. All rights reserved.
@@ -10,52 +10,52 @@
 
 #pragma mark Lifecycle
 
-WebSocketRef WebSocketCreate(CFAllocatorRef allocator, CFStringRef host, UInt16 port, void *userInfo) {
-  WebSocketRef webSocket = CFAllocatorAllocate(allocator, sizeof(WebSocket), 0);
+CoreWebSocketRef CoreWebSocketCreate(CFAllocatorRef allocator, CFStringRef host, UInt16 port, void *userInfo) {
+  CoreWebSocketRef webSocket = CFAllocatorAllocate(allocator, sizeof(CoreWebSocket), 0);
   if (webSocket) {
     webSocket->allocator = allocator ? CFRetain(allocator) : NULL;
     webSocket->retainCount = 1;
     webSocket->userInfo = userInfo;
-    
+
     webSocket->clientsLength = 1024;
     webSocket->clientsUsedLength = 0;
     if (NULL == (webSocket->clients = CFAllocatorAllocate(allocator, webSocket->clientsLength, 0))) {
-      webSocket = WebSocketRelease(webSocket);
+      webSocket = CoreWebSocketRelease(webSocket);
       goto fin;
     }
-    
+
     // Callbacks
     webSocket->callbacks.didAddClientCallback     = NULL;
     webSocket->callbacks.willRemoveClientCallback = NULL;
     webSocket->callbacks.didClientReadCallback    = NULL;
-    
+
     // Setup the context;
     webSocket->context.copyDescription = NULL;
     webSocket->context.retain = NULL;
     webSocket->context.release = NULL;
     webSocket->context.version = 0;
     webSocket->context.info = webSocket;
-    
-    if (NULL == (webSocket->socket = CFSocketCreate(webSocket->allocator, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketAcceptCallBack, __WebSocketAcceptCallBack, &webSocket->context))) {
-      webSocket = WebSocketRelease(webSocket);
+
+    if (NULL == (webSocket->socket = CFSocketCreate(webSocket->allocator, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketAcceptCallBack, __CoreWebSocketAcceptCallBack, &webSocket->context))) {
+      webSocket = CoreWebSocketRelease(webSocket);
       goto fin;
     }
-    
+
     // Re-use local addresses, if they're still in TIME_WAIT
     int yes = 1;
     setsockopt(CFSocketGetNative(webSocket->socket), SOL_SOCKET, SO_REUSEADDR, (void *)&yes, sizeof(yes));
-    
+
     /* Set the port and address we want to listen on */
     memset(&webSocket->addr, 0, sizeof(webSocket->addr));
     webSocket->addr.sin_len = sizeof(webSocket->addr);
     webSocket->addr.sin_family = AF_INET;
-    
-    if (CFEqual(kWebSocketHostAny, host)) {
-      
+
+    if (CFEqual(kCoreWebSocketHostAny, host)) {
+
       // Host is set to "0.0.0.0", set it to INADDR_ANY
       webSocket->addr.sin_addr.s_addr = htonl(INADDR_ANY);
     } else {
-      
+
       // Set the host based on provided string. TODO: hostname resolution?
       CFIndex hostCStringLength = CFStringGetMaximumSizeForEncoding(CFStringGetLength(host), kCFStringEncodingASCII) + 1;
       char *hostCString = CFAllocatorAllocate(webSocket->allocator, hostCStringLength, 0);
@@ -70,20 +70,20 @@ WebSocketRef WebSocketCreate(CFAllocatorRef allocator, CFStringRef host, UInt16 
         // TODO: Couldn't allocate buffer
       }
     }
-    
+
     webSocket->addr.sin_port = htons(port);
-    
+
     CFDataRef address = CFDataCreate(webSocket->allocator, (const void *)&webSocket->addr, sizeof(webSocket->addr));
     if (address) {
       if (CFSocketSetAddress(webSocket->socket, (CFDataRef)address) != kCFSocketSuccess) {
-        webSocket = WebSocketRelease(webSocket);
+        webSocket = CoreWebSocketRelease(webSocket);
 //        CFRelease(address); // TODO: is it retained by the function?
         goto fin;
       } else {
 //        CFRelease(address); // TODO: is it retained bby the function
       }
     }
-    
+
     // Create run loop source and add it to the current run loop
     CFRunLoopSourceRef source = CFSocketCreateRunLoopSource(webSocket->allocator, webSocket->socket, 0);
     CFRunLoopAddSource(CFRunLoopGetCurrent(), source, kCFRunLoopCommonModes);
@@ -93,27 +93,27 @@ fin:
   return webSocket;
 }
 
-WebSocketRef WebSocketCreateWithUserInfo(CFAllocatorRef allocator, void *userInfo) {
-  return WebSocketCreate(allocator, kWebSocketHostLoopBack, kWebSocketPortAny, userInfo);
+CoreWebSocketRef CoreWebSocketCreateWithUserInfo(CFAllocatorRef allocator, void *userInfo) {
+  return CoreWebSocketCreate(allocator, kCoreWebSocketHostLoopBack, kCoreWebSocketPortAny, userInfo);
 }
 
-WebSocketRef WebSocketRetain(WebSocketRef webSocket) {
+CoreWebSocketRef CoreWebSocketRetain(CoreWebSocketRef webSocket) {
   webSocket->retainCount++;
   return webSocket;
 }
 
-WebSocketRef WebSocketRelease(WebSocketRef webSocket) {
+CoreWebSocketRef CoreWebSocketRelease(CoreWebSocketRef webSocket) {
   if (webSocket) {
     if (--webSocket->retainCount == 0) {
       CFAllocatorRef allocator = webSocket->allocator;
-      
+
       if (webSocket->clients) {
         while (--webSocket->clientsUsedLength >= 0)
-          WebSocketClientRelease(webSocket->clients[webSocket->clientsUsedLength]);
+          CoreWebSocketClientRelease(webSocket->clients[webSocket->clientsUsedLength]);
         CFAllocatorDeallocate(allocator, webSocket->clients);
         webSocket->clients = NULL;
       }
-      
+
       if (webSocket->socket) {
         CFSocketInvalidate(webSocket->socket);
         CFRelease(webSocket->socket);
@@ -122,7 +122,7 @@ WebSocketRef WebSocketRelease(WebSocketRef webSocket) {
 
       CFAllocatorDeallocate(allocator, webSocket);
       webSocket = NULL;
-      
+
       if (allocator)
         CFRelease(allocator);
     }
@@ -130,7 +130,7 @@ WebSocketRef WebSocketRelease(WebSocketRef webSocket) {
   return webSocket;
 }
 
-UInt16 WebSocketGetPort(WebSocketRef webSocket) {
+UInt16 CoreWebSocketGetPort(CoreWebSocketRef webSocket) {
   UInt16 port = UINT16_MAX;
   if (webSocket && webSocket->socket) {
     struct sockaddr_in sockname;
@@ -145,20 +145,20 @@ UInt16 WebSocketGetPort(WebSocketRef webSocket) {
   return port;
 }
 
-void WebSocketWriteWithString(WebSocketRef webSocket, CFStringRef value) {
+void CoreWebSocketWriteWithString(CoreWebSocketRef webSocket, CFStringRef value) {
   if (webSocket) {
     for (CFIndex i = 0; i < webSocket->clientsUsedLength; i++) {
-      WebSocketWriteWithStringAndClientIndex(webSocket, value, i);
+      CoreWebSocketWriteWithStringAndClientIndex(webSocket, value, i);
     }
   }
 }
 
-CFIndex WebSocketWriteWithStringAndClientIndex(WebSocketRef webSocket, CFStringRef value, CFIndex index) {
+CFIndex CoreWebSocketWriteWithStringAndClientIndex(CoreWebSocketRef webSocket, CFStringRef value, CFIndex index) {
   CFIndex bytes = -1;
   if (webSocket) {
     if (value) {
       if (index < webSocket->clientsUsedLength) {
-        bytes = WebSocketClientWriteWithString(webSocket->clients[index], value);
+        bytes = CoreWebSocketClientWriteWithString(webSocket->clients[index], value);
       }
     }
   }
@@ -167,7 +167,7 @@ CFIndex WebSocketWriteWithStringAndClientIndex(WebSocketRef webSocket, CFStringR
 
 #pragma mark Callbacks
 
-void WebSocketSetClientReadCallback(WebSocketRef webSocket, WebSocketDidClientReadCallback callback) {
+void CoreWebSocketSetClientReadCallback(CoreWebSocketRef webSocket, CoreWebSocketDidClientReadCallback callback) {
   if (webSocket) {
     webSocket->callbacks.didClientReadCallback = callback;
   }
@@ -175,10 +175,10 @@ void WebSocketSetClientReadCallback(WebSocketRef webSocket, WebSocketDidClientRe
 
 #pragma mark Internal, client management
 
-CFIndex __WebSocketAppendClient(WebSocketRef webSocket, WebSocketClientRef client) {
+CFIndex __CoreWebSocketAppendClient(CoreWebSocketRef webSocket, CoreWebSocketClientRef client) {
   CFIndex count = -1;
   if (webSocket && client) {
-    webSocket->clients[webSocket->clientsUsedLength++] = WebSocketClientRetain(client);
+    webSocket->clients[webSocket->clientsUsedLength++] = CoreWebSocketClientRetain(client);
     count = webSocket->clientsUsedLength;
     if (webSocket->callbacks.didAddClientCallback)
       webSocket->callbacks.didAddClientCallback(webSocket, client);
@@ -186,7 +186,7 @@ CFIndex __WebSocketAppendClient(WebSocketRef webSocket, WebSocketClientRef clien
   return count;
 }
 
-CFIndex __WebSocketRemoveClient(WebSocketRef webSocket, WebSocketClientRef client) {
+CFIndex __CoreWebSocketRemoveClient(CoreWebSocketRef webSocket, CoreWebSocketClientRef client) {
   CFIndex count = -1;
   if (webSocket && client) {
     for (CFIndex i = 0; i < webSocket->clientsUsedLength; i++) {
@@ -194,7 +194,7 @@ CFIndex __WebSocketRemoveClient(WebSocketRef webSocket, WebSocketClientRef clien
         if (webSocket->callbacks.willRemoveClientCallback)
           webSocket->callbacks.willRemoveClientCallback(webSocket, client);
         webSocket->clients[i] = webSocket->clients[count = --webSocket->clientsUsedLength];
-        WebSocketClientRelease(client);
+        CoreWebSocketClientRelease(client);
       }
     }
   }
@@ -203,8 +203,8 @@ CFIndex __WebSocketRemoveClient(WebSocketRef webSocket, WebSocketClientRef clien
 
 #pragma mark Callbacks
 
-void __WebSocketAcceptCallBack(CFSocketRef socket, CFSocketCallBackType type, CFDataRef address, const void *sock, void *info) {
-  WebSocketRef webSocket = (WebSocketRef)info;
-  WebSocketClientRef client = WebSocketClientCreate(webSocket, *(CFSocketNativeHandle *)sock);
+void __CoreWebSocketAcceptCallBack(CFSocketRef socket, CFSocketCallBackType type, CFDataRef address, const void *sock, void *info) {
+  CoreWebSocketRef webSocket = (CoreWebSocketRef)info;
+  CoreWebSocketClientRef client = CoreWebSocketClientCreate(webSocket, *(CFSocketNativeHandle *)sock);
   printf("adding %p client\n", client);
 }
