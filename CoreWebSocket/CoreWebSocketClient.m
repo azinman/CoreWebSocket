@@ -6,7 +6,7 @@
 //  Copyright 2011 Inteliv Ltd. All rights reserved.
 //
 
-#include "WebSocketClient.h"
+#include "CoreWebSocketClient.h"
 
 #pragma mark Write
 
@@ -67,7 +67,7 @@ void __WebSocketClientReadCallBack(CFReadStreamRef stream, CFStreamEventType eve
     switch (eventType) {
       case kCFStreamEventOpenCompleted:
         break;
-      
+
       case kCFStreamEventHasBytesAvailable:
         if (!client->didReadHandShake) {
           if (__WebSocketClientReadHandShake(client)) {
@@ -89,10 +89,10 @@ void __WebSocketClientReadCallBack(CFReadStreamRef stream, CFStreamEventType eve
             printf("TODO: Didn't read handshake and __WebSocketClientReadHandShake failed.\n");
           }
         } else {
-          
+
           // Did handshake already and there are bytes to read.
           // It's incomming message.
-          
+
           UInt8 b[4096];
           memset(b, 0, sizeof(b));
           CFIndex by = 0;
@@ -126,13 +126,13 @@ void __WebSocketClientReadCallBack(CFReadStreamRef stream, CFStreamEventType eve
           }
         }
         break;
-      
+
       case kCFStreamEventErrorOccurred:
         break;
-        
+
       case kCFStreamEventEndEncountered:
         break;
-      
+
       default:
         break;
     }
@@ -164,20 +164,20 @@ bool __WebSocketClientWriteHandShakeDraftIETF_HYBI_00(WebSocketClientRef client)
       CFDataRef key3 = CFHTTPMessageCopyBody(client->handShakeRequestHTTPMessage);
       CFStringRef origin = CFHTTPMessageCopyHeaderFieldValue(client->handShakeRequestHTTPMessage, CFSTR("Origin"));
       CFStringRef host = CFHTTPMessageCopyHeaderFieldValue(client->handShakeRequestHTTPMessage, CFSTR("Host"));
-      
+
       CFHTTPMessageRef response = CFHTTPMessageCreateEmpty(NULL, 0);
       CFHTTPMessageAppendBytes(response, (const UInt8 *)"HTTP/1.1 101 Web Socket Protocol Handshake\r\n", 44);
       CFHTTPMessageSetHeaderFieldValue(response, CFSTR("Upgrade"), CFSTR("WebSocket"));
       CFHTTPMessageSetHeaderFieldValue(response, CFSTR("Connection"), CFSTR("Upgrade"));
       CFHTTPMessageSetHeaderFieldValue(response, CFSTR("Sec-Websocket-Origin"), origin);
-      
+
       CFMutableStringRef location = CFStringCreateMutable(client->allocator, 0);
       CFStringAppend(location, CFSTR("ws://"));
       CFStringAppend(location, host);
       CFStringAppend(location, CFSTR("/"));
       CFHTTPMessageSetHeaderFieldValue(response, CFSTR("Sec-Websocket-Location"), location);
       CFRelease(location);
-      
+
       // Set MD5 hash
       {
         CFMutableDataRef mutable = CFDataCreateMutable(client->allocator, 0);
@@ -189,13 +189,13 @@ bool __WebSocketClientWriteHandShakeDraftIETF_HYBI_00(WebSocketClientRef client)
         CFRelease(mutable);
         CFRelease(data);
       }
-      
+
       //CFShow(response);
-      
+
       success = __WebSocketClientWriteWithHTTPMessage(client, response);
-      
+
       CFRelease(response);
-      
+
       CFRelease(host);
       CFRelease(origin);
       CFRelease(key3);
@@ -211,20 +211,20 @@ bool __WebSocketClientWriteHandShakeDraftIETF_HYBI_00(WebSocketClientRef client)
 // See _CFEncodeBase64 function. The source code has been released under
 // Apple Public Source License Version 2.0 http://www.opensource.apple.com/apsl/
 CFStringRef __WebSocketCreateBase64StringWithData(CFAllocatorRef allocator, CFDataRef inputData) {
-	unsigned outDataLen;	
-	CFStringRef result = NULL;
-	unsigned char *outData = cuEnc64(CFDataGetBytePtr(inputData), (unsigned int)CFDataGetLength(inputData), &outDataLen);
-	if(outData) {
-		// current cuEnc64 appends \n and NULL, trim them
-		unsigned char *c = outData + outDataLen - 1;
-		while((*c == '\n') || (*c == '\0')) {
-			c--;
-			outDataLen--;
-		}
-		result = CFStringCreateWithBytes(allocator, outData, outDataLen, kCFStringEncodingASCII, FALSE);
-		free(outData);
-	}
-	return result;
+  unsigned outDataLen;
+  CFStringRef result = NULL;
+  unsigned char *outData = cuEnc64(CFDataGetBytePtr(inputData), (unsigned int)CFDataGetLength(inputData), &outDataLen);
+  if(outData) {
+    // current cuEnc64 appends \n and NULL, trim them
+    unsigned char *c = outData + outDataLen - 1;
+    while((*c == '\n') || (*c == '\0')) {
+      c--;
+      outDataLen--;
+    }
+    result = CFStringCreateWithBytes(allocator, outData, outDataLen, kCFStringEncodingASCII, FALSE);
+    free(outData);
+  }
+  return result;
 }
 
 bool __WebSocketClientWriteHandShakeDraftIETF_HYBI_06(WebSocketClientRef client) {
@@ -236,22 +236,22 @@ bool __WebSocketClientWriteHandShakeDraftIETF_HYBI_06(WebSocketClientRef client)
       CFStringRef keyWithMagick = CFStringCreateWithFormat(client->allocator, NULL, CFSTR("%@%@"), key, CFSTR("258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
       CFDataRef keyWithMagickSHA1 = __WebSocketCreateSHA1DataWithString(client->allocator, keyWithMagick, kCFStringEncodingUTF8);
       CFStringRef keyWithMagickSHA1Base64 = __WebSocketCreateBase64StringWithData(client->allocator, keyWithMagickSHA1);
-      
+
       //CFShow(keyWithMagickSHA1Base64);
-      
+
       CFStringRef origin = CFHTTPMessageCopyHeaderFieldValue(client->handShakeRequestHTTPMessage, CFSTR("Sec-WebSocket-Origin"));
       CFStringRef host = CFHTTPMessageCopyHeaderFieldValue(client->handShakeRequestHTTPMessage, CFSTR("Host"));
-      
+
       CFHTTPMessageRef response = CFHTTPMessageCreateEmpty(NULL, 0);
       CFHTTPMessageAppendBytes(response, (const UInt8 *)"HTTP/1.1 101 Switching Protocols\r\n", 44);
       CFHTTPMessageSetHeaderFieldValue(response, CFSTR("Upgrade"), CFSTR("websocket"));
       CFHTTPMessageSetHeaderFieldValue(response, CFSTR("Connection"), CFSTR("Upgrade"));
       CFHTTPMessageSetHeaderFieldValue(response, CFSTR("Sec-WebSocket-Accept"), keyWithMagickSHA1Base64);
-      
+
       success = __WebSocketClientWriteWithHTTPMessage(client, response);
-      
+
       CFRelease(response);
-      
+
       CFRelease(keyWithMagickSHA1Base64);
       CFRelease(keyWithMagickSHA1);
       CFRelease(keyWithMagick);
@@ -288,15 +288,15 @@ void __WebSocketClientWriteCallBack(CFWriteStreamRef stream, CFStreamEventType e
   WebSocketClientRef client = info;
   if (client) {
     switch (eventType) {
-        
+
       case kCFStreamEventCanAcceptBytes:
         if (!client->didWriteHandShake && client->didReadHandShake)
           __WebSocketClientWriteHandShake(client);
         break;
-        
+
       case kCFStreamEventEndEncountered:
         break;
-        
+
       case kCFStreamEventErrorOccurred:
         printf("kCFStreamEventErrorOccurred (write)\n");
         CFErrorRef error = CFWriteStreamCopyError(stream);
@@ -305,7 +305,7 @@ void __WebSocketClientWriteCallBack(CFWriteStreamRef stream, CFStreamEventType e
           CFRelease(error);
         }
         break;
-      
+
       default:
         break;
     }
@@ -322,24 +322,24 @@ WebSocketClientRef WebSocketClientCreate(WebSocketRef webSocket, CFSocketNativeH
       client->allocator = webSocket->allocator ? CFRetain(webSocket->allocator) : NULL;
       client->retainCount = 1;
       client->uuid = CFUUIDCreate(client->allocator);
-      
+
       client->webSocket = WebSocketRetain(webSocket);
       client->handle = handle;
-      
+
       client->read = NULL;
       client->write = NULL;
-      
+
       client->context.version = 0;
       client->context.info = client;
       client->context.copyDescription = NULL;
       client->context.retain = NULL;
       client->context.release = NULL;
-      
+
       client->handShakeRequestHTTPMessage = NULL;
       client->didReadHandShake = 0;
       client->didWriteHandShake = 0;
       client->protocol = kWebSocketProtocolUnknown;
-      
+
       CFStreamCreatePairWithSocket(client->allocator, handle, &client->read, &client->write);
       if (!client->read || !client->write) {
         close(handle);
@@ -353,7 +353,7 @@ WebSocketClientRef WebSocketClientCreate(WebSocketRef webSocket, CFSocketNativeH
 
       CFReadStreamScheduleWithRunLoop(client->read, CFRunLoopGetCurrent(), kCFRunLoopCommonModes);
       CFWriteStreamScheduleWithRunLoop(client->write, CFRunLoopGetCurrent(), kCFRunLoopCommonModes);
-      
+
       if (!CFReadStreamOpen(client->read)) {
         printf("couldn't open read stream\n");
       } else {
@@ -380,14 +380,14 @@ WebSocketClientRef WebSocketClientRelease(WebSocketClientRef client) {
   if (client) {
     if (--client->retainCount == 0) {
       CFAllocatorRef allocator = client->allocator;
-      
+
       if (client->read) {
         if (CFReadStreamGetStatus(client->read) != kCFStreamStatusClosed)
           CFReadStreamClose(client->read);
         CFRelease(client->read);
         client->read = NULL;
       }
-      
+
       if (client->write) {
         if (CFWriteStreamGetStatus(client->write) != kCFStreamStatusClosed)
           CFWriteStreamClose(client->write);
@@ -398,7 +398,7 @@ WebSocketClientRef WebSocketClientRelease(WebSocketClientRef client) {
       client->uuid = NULL;
       CFAllocatorDeallocate(allocator, client);
       client = NULL;
-      
+
       if (allocator)
         CFRelease(allocator);
     }
@@ -495,7 +495,7 @@ fin:
 bool __WebSocketClientHandShakeUpdateProtocolBasedOnHTTPMessage(WebSocketClientRef client) {
   bool success = 0;
   if (client) {
-    
+
     // Get the protocol version
     client->protocol = kWebSocketProtocolUnknown;
     CFStringRef upgrade = CFHTTPMessageCopyHeaderFieldValue(client->handShakeRequestHTTPMessage, CFSTR("Upgrade"));
@@ -510,7 +510,7 @@ bool __WebSocketClientHandShakeUpdateProtocolBasedOnHTTPMessage(WebSocketClientR
           }
           CFRelease(version);
         } else {
-          
+
           // Sec-WebSocket-Version header field is missing.
           // It may be 00 protocol, which doesn't have this field.
           // 00 protocol has to have Sec-WebSocket-Key1 and Sec-WebSocket-Key2
@@ -541,7 +541,7 @@ bool __WebSocketClientReadHandShake(WebSocketClientRef client) {
   if (client) {
     if ((success = __WebSocketClientHandShakeConsumeHTTPMessage(client))) {
       if ((success = __WebSocketClientHandShakeUpdateProtocolBasedOnHTTPMessage(client))) {
-        
+
         // Dump http message
         CFDictionaryRef headerFields = CFHTTPMessageCopyAllHeaderFields(client->handShakeRequestHTTPMessage);
         if (headerFields) {

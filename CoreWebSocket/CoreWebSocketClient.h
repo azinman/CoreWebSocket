@@ -9,8 +9,9 @@
 #ifndef __CORE_WEB_SOCKET_CLIENT__
 #define __CORE_WEB_SOCKET_CLIENT__ 1
 
-#include "WebSocket.h"
+#include "CoreWebSocket.h"
 #include "cuEnc64.h"
+#include <CommonCrypto/CommonDigest.h>
 
 #pragma mark Lifecycle
 

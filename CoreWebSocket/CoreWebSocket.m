@@ -6,7 +6,7 @@
 //  Copyright 2011 Inteliv Ltd. All rights reserved.
 //
 
-#include "WebSocket.h"
+#include "CoreWebSocketLib.h"
 
 #pragma mark Lifecycle
 

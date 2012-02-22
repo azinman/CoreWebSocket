@@ -9,6 +9,7 @@
 #ifndef __CORE_WEB_SOCKET_TYPES__
 #define __CORE_WEB_SOCKET_TYPES__ 1
 
+#import "CoreWebSocketLib.h"
 #include <CoreFoundation/CoreFoundation.h>
 
 #define WebSocketLog(fmt, ...) printf(fmt, __VA_ARGS__)
