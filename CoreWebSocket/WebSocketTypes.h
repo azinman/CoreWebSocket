@@ -60,6 +60,7 @@ enum WebSocketClientState {
 };
 
 struct WebSocketClient {
+  CFUUIDRef uuid;
   CFAllocatorRef allocator;
   CFIndex retainCount;
   WebSocketRef webSocket;

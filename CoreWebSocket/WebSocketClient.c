@@ -10,6 +10,16 @@
 
 #pragma mark Write
 
+// Internal functions
+CFIndex __WebSocketClientWriteFrame(WebSocketClientRef client, const UInt8 *buffer, CFIndex length);
+CFStringRef __WebSocketCreateBase64StringWithData(CFAllocatorRef allocator, CFDataRef inputData);
+void __WebSocketClientReadCallBack(CFReadStreamRef stream, CFStreamEventType eventType, void *info);
+void __WebSocketClientWriteCallBack(CFWriteStreamRef stream, CFStreamEventType eventType, void *info);
+bool __WebSocketClientWriteHandShakeDraftIETF_HYBI_06(WebSocketClientRef client);
+bool __WebSocketClientHandShakeConsumeHTTPMessage(WebSocketClientRef client);
+bool __WebSocketClientWriteHandShakeDraftIETF_HYBI_00(WebSocketClientRef client);
+bool __WebSocketClientHandShakeUpdateProtocolBasedOnHTTPMessage(WebSocketClientRef client);
+
 // Internal function, write provided buffer in a frame [0x00 ... 0xff]
 CFIndex __WebSocketClientWriteFrame(WebSocketClientRef client, const UInt8 *buffer, CFIndex length) {
   CFIndex bytes = -1;
@@ -180,7 +190,7 @@ bool __WebSocketClientWriteHandShakeDraftIETF_HYBI_00(WebSocketClientRef client)
         CFRelease(data);
       }
       
-      CFShow(response);
+      //CFShow(response);
       
       success = __WebSocketClientWriteWithHTTPMessage(client, response);
       
@@ -227,7 +237,7 @@ bool __WebSocketClientWriteHandShakeDraftIETF_HYBI_06(WebSocketClientRef client)
       CFDataRef keyWithMagickSHA1 = __WebSocketCreateSHA1DataWithString(client->allocator, keyWithMagick, kCFStringEncodingUTF8);
       CFStringRef keyWithMagickSHA1Base64 = __WebSocketCreateBase64StringWithData(client->allocator, keyWithMagickSHA1);
       
-      CFShow(keyWithMagickSHA1Base64);
+      //CFShow(keyWithMagickSHA1Base64);
       
       CFStringRef origin = CFHTTPMessageCopyHeaderFieldValue(client->handShakeRequestHTTPMessage, CFSTR("Sec-WebSocket-Origin"));
       CFStringRef host = CFHTTPMessageCopyHeaderFieldValue(client->handShakeRequestHTTPMessage, CFSTR("Host"));
@@ -311,6 +321,7 @@ WebSocketClientRef WebSocketClientCreate(WebSocketRef webSocket, CFSocketNativeH
     if (client) {
       client->allocator = webSocket->allocator ? CFRetain(webSocket->allocator) : NULL;
       client->retainCount = 1;
+      client->uuid = CFUUIDCreate(client->allocator);
       
       client->webSocket = WebSocketRetain(webSocket);
       client->handle = handle;
@@ -383,7 +394,8 @@ WebSocketClientRef WebSocketClientRelease(WebSocketClientRef client) {
         CFRelease(client->write);
         client->write = NULL;
       }
-      
+      CFRelease(client->uuid);
+      client->uuid = NULL;
       CFAllocatorDeallocate(allocator, client);
       client = NULL;
       
@@ -533,7 +545,7 @@ bool __WebSocketClientReadHandShake(WebSocketClientRef client) {
         // Dump http message
         CFDictionaryRef headerFields = CFHTTPMessageCopyAllHeaderFields(client->handShakeRequestHTTPMessage);
         if (headerFields) {
-          CFShow(headerFields);
+          //CFShow(headerFields);
           CFRelease(headerFields);
         }
 //        printf("__WebSocketClientReadHandShake: protocol %i\n", client->protocol);
