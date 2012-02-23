@@ -36,16 +36,19 @@ enum CoreWebSocketProtocol {
 
 #pragma mark CoreWebSocket Callbacks
 
-typedef void (*CoreWebSocketDidAddClientCallback)     (CoreWebSocketRef webSocket, CoreWebSocketClientRef client);
-typedef void (*CoreWebSocketWillRemoveClientCallback) (CoreWebSocketRef webSocket, CoreWebSocketClientRef client);
-typedef void (*CoreWebSocketDidClientReadCallback)    (CoreWebSocketRef webSocket, CoreWebSocketClientRef client, CFStringRef value);
+//typedef void (*CoreWebSocketDidAddClientCallback)     (CoreWebSocketRef webSocket, CoreWebSocketClientRef client);
+//typedef void (*CoreWebSocketWillRemoveClientCallback) (CoreWebSocketRef webSocket, CoreWebSocketClientRef client);
+//typedef void (*CoreWebSocketDidClientReadCallback)    (CoreWebSocketRef webSocket, CoreWebSocketClientRef client, CFStringRef value);
+typedef void (^CoreWebSocketDidAddClientCallback)     (CoreWebSocketRef, CoreWebSocketClientRef);
+typedef void (^CoreWebSocketWillRemoveClientCallback) (CoreWebSocketRef, CoreWebSocketClientRef);
+typedef void (^CoreWebSocketDidClientReadCallback)    (CoreWebSocketRef, CoreWebSocketClientRef, CFStringRef);
 
 typedef struct CoreWebSocketCallbacks CoreWebSocketCallbacks;
 
 struct CoreWebSocketCallbacks {
-  CoreWebSocketDidAddClientCallback     didAddClientCallback;
-  CoreWebSocketWillRemoveClientCallback willRemoveClientCallback;
-  CoreWebSocketDidClientReadCallback    didClientReadCallback;
+  __unsafe_unretained CoreWebSocketDidAddClientCallback didAddClientCallback;
+  __unsafe_unretained CoreWebSocketWillRemoveClientCallback willRemoveClientCallback;
+  __unsafe_unretained CoreWebSocketDidClientReadCallback didClientReadCallback;
 };
 
 #pragma mark CoreWebSocket Client

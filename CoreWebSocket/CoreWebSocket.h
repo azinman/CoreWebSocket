@@ -31,6 +31,8 @@ CFIndex CoreWebSocketWriteWithStringAndClientIndex (CoreWebSocketRef webSocket, 
 #pragma mark Callbacks
 
 void CoreWebSocketSetClientReadCallback(CoreWebSocketRef webSocket, CoreWebSocketDidClientReadCallback callback);
+void CoreWebSocketSetDidAddClientCallback(CoreWebSocketRef webSocket, CoreWebSocketDidAddClientCallback callback);
+void CoreWebSocketSetWillRemoveClientCallback(CoreWebSocketRef webSocket, CoreWebSocketWillRemoveClientCallback callback);
 
 #pragma mark Internal, client management
 

@@ -25,9 +25,9 @@ CoreWebSocketRef CoreWebSocketCreate(CFAllocatorRef allocator, CFStringRef host,
     }
 
     // Callbacks
-    webSocket->callbacks.didAddClientCallback     = NULL;
-    webSocket->callbacks.willRemoveClientCallback = NULL;
-    webSocket->callbacks.didClientReadCallback    = NULL;
+    webSocket->callbacks.didAddClientCallback     = nil;
+    webSocket->callbacks.willRemoveClientCallback = nil;
+    webSocket->callbacks.didClientReadCallback    = nil;
 
     // Setup the context;
     webSocket->context.copyDescription = NULL;
@@ -169,7 +169,19 @@ CFIndex CoreWebSocketWriteWithStringAndClientIndex(CoreWebSocketRef webSocket, C
 
 void CoreWebSocketSetClientReadCallback(CoreWebSocketRef webSocket, CoreWebSocketDidClientReadCallback callback) {
   if (webSocket) {
-    webSocket->callbacks.didClientReadCallback = callback;
+    webSocket->callbacks.didClientReadCallback = [callback copy];
+  }
+}
+
+void CoreWebSocketSetDidAddClientCallback(CoreWebSocketRef webSocket, CoreWebSocketDidAddClientCallback callback) {
+  if (webSocket) {
+    webSocket->callbacks.didClientReadCallback = [callback copy];
+  }
+}
+
+void CoreWebSocketSetWillRemoveClientCallback(CoreWebSocketRef webSocket, CoreWebSocketWillRemoveClientCallback callback) {
+  if (webSocket) {
+    webSocket->callbacks.willRemoveClientCallback = [callback copy];
   }
 }
 
